@@ -82,12 +82,17 @@ document.querySelectorAll('[data-flower]').forEach(flower => {
 document.querySelectorAll('.cottage-scene').forEach(cottage => {
   const door = cottage.querySelector('.cottage-door');
   const speech = cottage.querySelector('.cottage-speech');
+  const replies = cottage.classList.contains('cafe-cottage')
+    ? ['Welcome to Meadow Cafe!', 'One scoop of curiosity, coming up!', "Today's special? Trying something new!"]
+    : cottage.classList.contains('mushroom-cottage')
+      ? ['Psst... is that a curious explorer?', 'Just polishing my mushroom roof!', "It is cosy under this little cap!"]
+      : ["Who is rustling in the flowers?", 'Oh! A visitor. Come say hello!', 'Mind the daisies on your way out!'];
   let knocks = 0;
   door.addEventListener('click', () => {
     knocks++;
     cottage.classList.add('cottage-awake');
     replay(cottage, 'cottage-knocking');
-    const message = knocks === 1 ? 'Knock, knock... anyone home?' : (knocks % 2 ? 'Oh, hello again!' : 'Who could that be?');
+    const message = replies[(knocks - 1) % replies.length];
     speech.textContent = message;
     speech.classList.add('is-visible');
     document.getElementById('cottage-status').textContent = message;
@@ -248,3 +253,22 @@ window.addEventListener('resize', () => {
   planButterflyFlight();
 });
 planButterflyFlight();
+
+// The butterfly yields whenever its flight passes an uncollected acorn.
+// Check the actual rendered rectangles, including during flight and scrolling.
+function keepAcornsClear() {
+  if (document.hidden) return;
+  const b = butterfly.getBoundingClientRect();
+  const nearAcorn = acornButtons.some(acorn => {
+    if (acorn.disabled) return false;
+    const a = acorn.getBoundingClientRect();
+    return a.bottom > 0 && a.top < window.innerHeight &&
+      b.left < a.right + 16 && b.right > a.left - 16 &&
+      b.top < a.bottom + 16 && b.bottom > a.top - 16;
+  });
+  butterfly.classList.toggle('is-near-acorn', nearAcorn);
+}
+setInterval(keepAcornsClear, 120);
+window.addEventListener('scroll', keepAcornsClear, {passive:true});
+window.addEventListener('resize', keepAcornsClear);
+keepAcornsClear();
