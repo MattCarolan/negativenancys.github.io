@@ -98,3 +98,153 @@ document.querySelectorAll('.cottage-scene').forEach(cottage => {
     }, 4000);
   });
 });
+
+// Meadow discoveries. All progress stays in this browser tab.
+const natureMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const discoveryMessage = document.getElementById('discovery-message');
+const natureParticles = document.getElementById('nature-particles');
+function announceDiscovery(message, duration = 2600) {
+  discoveryMessage.textContent = message;
+  discoveryMessage.classList.add('is-visible');
+  later(discoveryMessage, () => discoveryMessage.classList.remove('is-visible'), duration);
+}
+function scatterNature(x, y, celebrate = false) {
+  natureParticles.replaceChildren();
+  if (natureMotion.matches) return;
+  for (let i = 0; i < (celebrate ? 36 : 9); i++) {
+    const spark = document.createElement('span');
+    spark.className = 'nature-spark' + (celebrate ? ' celebration' : '');
+    spark.style.left = (celebrate ? 15 + Math.random() * 70 : x / window.innerWidth * 100) + 'vw';
+    spark.style.top = (celebrate ? 25 + Math.random() * 25 : y / window.innerHeight * 100) + 'vh';
+    const angle = i * Math.PI * 2 / 9;
+    spark.style.setProperty('--spark-x', Math.cos(angle) * (celebrate ? 160 : 45) + 'px');
+    spark.style.setProperty('--spark-y', (celebrate ? 160 + Math.random() * 150 : Math.sin(angle) * 45 - 20) + 'px');
+    natureParticles.appendChild(spark);
+  }
+  later(natureParticles, () => natureParticles.replaceChildren(), 2100);
+}
+document.querySelectorAll('.bounce-mushroom').forEach(mushroom => {
+  mushroom.addEventListener('click', () => {
+    replay(mushroom, 'mushroom-bouncing');
+    const rect = mushroom.getBoundingClientRect();
+    scatterNature(rect.left + rect.width / 2, rect.top + 15);
+    announceDiscovery('Boing! That mushroom is ticklish.');
+    later(mushroom, () => mushroom.classList.remove('mushroom-bouncing'), 1000);
+  });
+});
+
+const acornButtons = [...document.querySelectorAll('[data-acorn]')];
+const acornIds = new Set(acornButtons.map(button => button.dataset.acorn));
+const foundAcorns = new Set();
+try {
+  const stored = JSON.parse(sessionStorage.getItem('nancy-acorns-v1') || '[]');
+  if (Array.isArray(stored)) stored.filter(id => acornIds.has(id)).forEach(id => foundAcorns.add(id));
+} catch { /* The hunt still works when browser storage is unavailable. */ }
+const acornBasket = document.getElementById('acorn-basket');
+const restartHunt = document.getElementById('restart-hunt');
+function showAcornProgress() {
+  acornButtons.forEach(button => {
+    const found = foundAcorns.has(button.dataset.acorn);
+    button.classList.toggle('is-found', found);
+    button.disabled = found;
+  });
+  acornBasket.hidden = foundAcorns.size === 0;
+  document.getElementById('acorn-count').textContent = `${foundAcorns.size} / ${acornButtons.length} found`;
+  restartHunt.hidden = foundAcorns.size !== acornButtons.length;
+  try { sessionStorage.setItem('nancy-acorns-v1', JSON.stringify([...foundAcorns])); } catch {}
+}
+acornButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    if (foundAcorns.has(button.dataset.acorn)) return;
+    foundAcorns.add(button.dataset.acorn);
+    const rect = button.getBoundingClientRect();
+    showAcornProgress();
+    const complete = foundAcorns.size === acornButtons.length;
+    scatterNature(rect.left + rect.width / 2, rect.top, complete);
+    announceDiscovery(complete ? 'All five! You stayed curious!' : `You found an acorn! ${foundAcorns.size} of ${acornButtons.length}.`, complete ? 5000 : 2400);
+    // Keep keyboard users near the discovery rather than losing focus to the page.
+    if (document.activeElement === button) {
+      if (complete) restartHunt.focus({preventScroll:true});
+      else {
+        const nextControl = button.parentElement.querySelector('button:not(:disabled), a[href]');
+        if (nextControl) nextControl.focus({preventScroll:true});
+        else button.blur();
+      }
+    }
+  });
+});
+restartHunt.addEventListener('click', () => {
+  foundAcorns.clear();
+  showAcornProgress();
+  announceDiscovery('Five acorns are hiding again. Happy exploring!');
+  acornButtons[0].focus({preventScroll:false});
+});
+showAcornProgress();
+
+const butterfly = document.getElementById('curious-butterfly');
+let butterflyTimer;
+let butterflyRestTimer;
+let butterflyPaused = false;
+function freezeButterfly() {
+  const rect = butterfly.getBoundingClientRect();
+  butterfly.style.transition = 'none';
+  butterfly.style.left = rect.left + 'px';
+  butterfly.style.top = rect.top + 'px';
+  void butterfly.offsetWidth;
+}
+function planButterflyFlight(delay = 7000) {
+  clearTimeout(butterflyTimer);
+  if (document.hidden || natureMotion.matches || butterflyPaused) return;
+  butterflyTimer = setTimeout(() => {
+    butterfly.style.transition = '';
+    const maxX = Math.max(12, window.innerWidth - 90);
+    const maxY = Math.max(90, window.innerHeight - 160);
+    butterfly.style.left = Math.min(maxX, Math.max(12, window.innerWidth * (.12 + Math.random() * .73))) + 'px';
+    butterfly.style.top = Math.min(maxY, Math.max(90, window.innerHeight * (.2 + Math.random() * .46))) + 'px';
+    planButterflyFlight();
+  }, delay);
+}
+butterfly.addEventListener('click', () => {
+  clearTimeout(butterflyTimer);
+  clearTimeout(butterflyRestTimer);
+  freezeButterfly();
+  butterflyPaused = true;
+  butterfly.classList.add('is-landed');
+  butterfly.querySelector('.butterfly-message').textContent = 'Hello!';
+  announceDiscovery('You caught the curious butterfly! A little rest, then off we go.');
+  butterflyRestTimer = setTimeout(() => {
+    butterfly.classList.remove('is-landed');
+    butterflyPaused = butterfly.matches(':hover') || document.activeElement === butterfly;
+    planButterflyFlight(1000);
+  }, 3500);
+});
+function pauseButterfly() {
+  butterflyPaused = true;
+  clearTimeout(butterflyTimer);
+  freezeButterfly();
+}
+function resumeButterfly() {
+  if (butterfly.classList.contains('is-landed') || document.activeElement === butterfly) return;
+  butterflyPaused = false;
+  planButterflyFlight(2000);
+}
+butterfly.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') pauseButterfly(); });
+butterfly.addEventListener('pointerleave', resumeButterfly);
+butterfly.addEventListener('focus', pauseButterfly);
+butterfly.addEventListener('blur', resumeButterfly);
+document.addEventListener('visibilitychange', () => {
+  clearTimeout(butterflyTimer);
+  if (!document.hidden) planButterflyFlight();
+});
+natureMotion.addEventListener('change', () => {
+  clearTimeout(butterflyTimer);
+  freezeButterfly();
+  planButterflyFlight();
+});
+window.addEventListener('resize', () => {
+  freezeButterfly();
+  butterfly.style.left = Math.max(12, Math.min(parseFloat(butterfly.style.left), window.innerWidth - 80)) + 'px';
+  butterfly.style.top = Math.max(50, Math.min(parseFloat(butterfly.style.top), window.innerHeight - 120)) + 'px';
+  planButterflyFlight();
+});
+planButterflyFlight();
