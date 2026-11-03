@@ -79,23 +79,22 @@ document.querySelectorAll('[data-flower]').forEach(flower => {
   });
 });
 
-const cottage = document.querySelector('.cottage-scene');
-const cottageDoor = document.querySelector('.cottage-door');
-const cottageSpeech = document.querySelector('.cottage-speech');
-let knocks = 0;
-cottageDoor.addEventListener('click', () => {
-  knocks++;
-  cottage.classList.add('cottage-awake');
-  replay(cottage, 'cottage-knocking');
-  const peeking = knocks > 1;
-  cottage.classList.toggle('cottage-peeking', peeking);
-  const message = peeking ? (knocks % 2 ? 'Oh, hello again!' : 'Who could that be?') : 'Knock, knock... anyone home?';
-  cottageSpeech.textContent = message;
-  cottageSpeech.classList.add('is-visible');
-  document.getElementById('cottage-status').textContent = message;
-  later(cottage, () => {
-    cottage.classList.remove('cottage-awake', 'cottage-knocking', 'cottage-peeking');
-    cottageSpeech.classList.remove('is-visible');
-    knocks = 0;
-  }, 4000);
+document.querySelectorAll('.cottage-scene').forEach(cottage => {
+  const door = cottage.querySelector('.cottage-door');
+  const speech = cottage.querySelector('.cottage-speech');
+  let knocks = 0;
+  door.addEventListener('click', () => {
+    knocks++;
+    cottage.classList.add('cottage-awake');
+    replay(cottage, 'cottage-knocking');
+    const message = knocks === 1 ? 'Knock, knock... anyone home?' : (knocks % 2 ? 'Oh, hello again!' : 'Who could that be?');
+    speech.textContent = message;
+    speech.classList.add('is-visible');
+    document.getElementById('cottage-status').textContent = message;
+    later(cottage, () => {
+      cottage.classList.remove('cottage-awake', 'cottage-knocking');
+      speech.classList.remove('is-visible');
+      knocks = 0;
+    }, 4000);
+  });
 });
