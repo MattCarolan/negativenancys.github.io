@@ -199,7 +199,7 @@ function freezeButterfly() {
 }
 function planButterflyFlight(delay = 7000) {
   clearTimeout(butterflyTimer);
-  if (document.hidden || natureMotion.matches || butterflyPaused) return;
+  if (document.hidden || natureMotion.matches || butterflyPaused || document.body.classList.contains('is-bedtime')) return;
   butterflyTimer = setTimeout(() => {
     butterfly.style.transition = '';
     const maxX = Math.max(12, window.innerWidth - 90);
@@ -272,3 +272,83 @@ setInterval(keepAcornsClear, 120);
 window.addEventListener('scroll', keepAcornsClear, {passive:true});
 window.addEventListener('resize', keepAcornsClear);
 keepAcornsClear();
+
+// Nancy watches visitors without moving the printed book or its lettering.
+const cursorEyes = document.querySelector('.cursor-eyes');
+const nancyPupils = [...document.querySelectorAll('.nancy-pupil')];
+const cursorSpeech = document.querySelector('.cursor-speech');
+const faceButton = document.querySelector('.nancy-face');
+const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+const nancyComments = ['I can see that pointer!', 'A little space, please!', 'Are you following me? I am following you!', 'No tickling the nose!'];
+let nancyComment = 0;
+let lastNancyComment = 0;
+let eyeFrame = 0;
+let latestPointer;
+function nancyObjects() {
+  const message = nancyComments[nancyComment++ % nancyComments.length];
+  cursorSpeech.textContent = message;
+  cursorSpeech.classList.add('is-visible');
+  document.getElementById('cursor-status').textContent = message;
+  later(cursorSpeech, () => cursorSpeech.classList.remove('is-visible'), 2300);
+  lastNancyComment = performance.now();
+}
+function followNancyPointer() {
+  eyeFrame = 0;
+  if (!latestPointer || !finePointer.matches) return;
+  const matrix = cursorEyes.getScreenCTM();
+  if (!matrix) return;
+  const point = cursorEyes.createSVGPoint();
+  point.x = latestPointer.x;
+  point.y = latestPointer.y;
+  const local = point.matrixTransform(matrix.inverse());
+  nancyPupils.forEach((pupil, index) => {
+    const x = index ? 821 : 668;
+    const dx = Math.max(-11, Math.min(11, (local.x - x) / 26));
+    const dy = Math.max(-7, Math.min(7, (local.y - 1019) / 32));
+    pupil.setAttribute('transform', `translate(${dx} ${dy})`);
+  });
+  const closeToFace = Math.hypot(local.x - 745, local.y - 1019) < 230;
+  if (closeToFace && performance.now() - lastNancyComment > 2800) nancyObjects();
+}
+document.addEventListener('pointermove', event => {
+  if (event.pointerType !== 'mouse' || !finePointer.matches) return;
+  const visibleCover = cover.getBoundingClientRect();
+  if (visibleCover.bottom < 0 || visibleCover.top > window.innerHeight) {cover.classList.remove('is-watching'); return;}
+  cover.classList.add('is-watching');
+  latestPointer = {x:event.clientX, y:event.clientY};
+  if (!eyeFrame) eyeFrame = requestAnimationFrame(followNancyPointer);
+});
+document.addEventListener('pointerleave', () => {
+  cover.classList.remove('is-watching');
+  cursorSpeech.classList.remove('is-visible');
+  latestPointer = null;
+  cancelAnimationFrame(eyeFrame);
+  eyeFrame = 0;
+  nancyPupils.forEach(pupil => pupil.removeAttribute('transform'));
+});
+faceButton.addEventListener('click', nancyObjects);
+
+// A little moon switches the meadow to bedtime. No acorn progress is reset.
+const meadowClock = document.getElementById('meadow-clock');
+const fireflyField = document.querySelector('.meadow-fireflies');
+for (let i = 0; i < 20; i++) {
+  const firefly = document.createElement('span');
+  firefly.className = 'firefly';
+  firefly.style.setProperty('--fly-x', (5 + i * 43 % 90) + '%');
+  firefly.style.setProperty('--fly-y', (13 + i * 29 % 75) + '%');
+  firefly.style.setProperty('--fly-duration', (4 + i % 5) + 's');
+  firefly.style.setProperty('--fly-delay', (-i * .37) + 's');
+  fireflyField.appendChild(firefly);
+}
+function setMeadowBedtime(bedtime, announce = true) {
+  document.body.classList.toggle('is-bedtime', bedtime);
+  meadowClock.setAttribute('aria-pressed', String(bedtime));
+  meadowClock.setAttribute('aria-label', bedtime ? 'Wake up the meadow' : 'Bedtime in the meadow');
+  meadowClock.querySelector('.clock-hint').textContent = bedtime ? 'Good morning?' : 'Bedtime?';
+  clearTimeout(butterflyTimer);
+  if (!bedtime) planButterflyFlight(1500);
+  try {sessionStorage.setItem('nancy-bedtime-v1', String(bedtime));} catch {}
+  if (announce) announceDiscovery(bedtime ? 'Goodnight, meadow. Hello, little fireflies!' : 'Good morning, meadow! Ready to explore?');
+}
+meadowClock.addEventListener('click', () => setMeadowBedtime(!document.body.classList.contains('is-bedtime')));
+try {if (sessionStorage.getItem('nancy-bedtime-v1') === 'true') setMeadowBedtime(true, false);} catch {}
