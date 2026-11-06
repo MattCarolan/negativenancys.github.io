@@ -23,9 +23,13 @@
   function star(x,y) {
     return `<path d="M${x} ${y-6}l2 4 5 1-4 3 1 5-4-2-4 2 1-5-4-3 5-1Z" fill="#77503c"/>`;
   }
+  function iceSprinkle(x, y, angle, colour, length = 4.6) {
+    const half = length / 2;
+    return `<g class="ice-sprinkle" transform="translate(${x} ${y}) rotate(${angle})"><path d="M${-half} .65H${half}" stroke="#634331" stroke-opacity=".2" stroke-width="2.1" stroke-linecap="round"/><path d="M${-half} 0H${half}" stroke="${colour}" stroke-width="1.7" stroke-linecap="round"/><path d="M${-half+.6} -.35H${half-.6}" stroke="#fff9ec" stroke-opacity=".45" stroke-width=".45" stroke-linecap="round"/></g>`;
+  }
   function drawIceCream() {
     const top = 140;
-    let svg = '<svg viewBox="0 0 280 340" role="img" aria-label="Your meadow ice cream"><ellipse cx="140" cy="322" rx="55" ry="7" fill="#284d3918"/><defs><clipPath id="ice-cone-clip"><path d="M100 200H180L141 318Z"/></clipPath></defs><path d="M100 200H180L141 318Z" fill="#dfb16a" stroke="#ae7c44" stroke-width="3" stroke-linejoin="round"/><g clip-path="url(#ice-cone-clip)" stroke="#b27e45" stroke-width="2" opacity=".65">';
+    let svg = '<svg viewBox="0 0 280 340" role="img" aria-label="Your meadow ice cream"><ellipse cx="140" cy="322" rx="55" ry="7" fill="#284d3918"/><defs><clipPath id="ice-cone-clip"><path d="M100 200H180L141 318Z"/></clipPath><clipPath id="ice-petal-surface"><path d="M140 140C111 122 114 83 140 73C166 83 169 122 140 140Z"/></clipPath><clipPath id="ice-flower-centre"><circle cx="140" cy="140" r="24"/></clipPath></defs><path d="M100 200H180L141 318Z" fill="#dfb16a" stroke="#ae7c44" stroke-width="3" stroke-linejoin="round"/><g clip-path="url(#ice-cone-clip)" stroke="#b27e45" stroke-width="2" opacity=".65">';
     for(let i=0;i<7;i++) svg += `<path d="M75 ${190+i*23}l115 81M204 ${190+i*23}l-115 81"/>`;
     svg += '</g>';
     if (!scoops.length) {
@@ -36,13 +40,27 @@
       svg += '<ellipse cx="140" cy="201" rx="40" ry="8" fill="#f5e7bf" stroke="#ae7c4455" stroke-width="2"/><g class="ice-flower">';
       for (let petal=0; petal<10; petal++) {
         const colour = flavours[scoops[petal % scoops.length]].colour;
-        svg += `<g transform="rotate(${petal*36} 140 140)"><path class="ice-flower-petal" d="M140 140C111 122 114 83 140 73C166 83 169 122 140 140Z" fill="${colour}" stroke="#6a604455" stroke-width="1.5"/><path d="M136 90Q125 103 132 118" fill="none" stroke="#ffffff55" stroke-width="4" stroke-linecap="round"/></g>`;
+        let petalSprinkles = '';
+        if (toppings.has('sprinkles')) {
+          const sprinkleColours = ['#db6383','#e5ac39','#5e9ab6','#9973b6','#fff3db','#76a87a'];
+          const positions = [[132,95],[146,108],[138,123]];
+          petalSprinkles = '<g clip-path="url(#ice-petal-surface)">';
+          positions.forEach(([x,y],i) => {
+            const offset = (petal % 3 - 1) * 1.5;
+            petalSprinkles += iceSprinkle(x + offset, y + (petal % 2 ? 2 : -1), (petal * 73 + i * 61) % 180, sprinkleColours[(petal * 2 + i) % sprinkleColours.length], 4 + (petal + i) % 3 * .5);
+          });
+          petalSprinkles += '</g>';
+        }
+        svg += `<g transform="rotate(${petal*36} 140 140)"><path class="ice-flower-petal" d="M140 140C111 122 114 83 140 73C166 83 169 122 140 140Z" fill="${colour}" stroke="#6a604455" stroke-width="1.5"/><path d="M136 90Q125 103 132 118" fill="none" stroke="#ffffff55" stroke-width="4" stroke-linecap="round"/>${petalSprinkles}</g>`;
       }
       svg += '<circle cx="140" cy="140" r="25" fill="#f8d979" stroke="#d2ac5c" stroke-width="2"/><g fill="#fff1b6"><circle cx="130" cy="132" r="3"/><circle cx="143" cy="128" r="2.5"/><circle cx="151" cy="138" r="3"/><circle cx="135" cy="145" r="2.5"/><circle cx="145" cy="151" r="2.5"/></g></g>';
     }
     if (scoops.length && toppings.has('sprinkles')) {
-      const colours=['#ee887b','#f3c94f','#79b1cb','#ad84be','#5eaa7e'];
-      for(let i=0;i<17;i++) {const x=113+(i*17%55),y=top-20+(i*13%42);svg+=`<path d="M${x} ${y}l${i%2?4:-4} 5" stroke="${colours[i%5]}" stroke-width="3" stroke-linecap="round"/>`;}
+      const colours = ['#db6383','#5e9ab6','#fff3db','#9973b6','#76a87a','#e5ac39'];
+      const positions = [[132,126,32],[146,125,109],[154,135,66],[143,137,151],[126,139,87],[131,151,18],[146,153,126],[154,146,38],[139,145,73]];
+      svg += '<g clip-path="url(#ice-flower-centre)">';
+      positions.forEach(([x,y,angle],i) => { svg += iceSprinkle(x,y,angle,colours[i % colours.length],4.2); });
+      svg += '</g>';
     }
     if(scoops.length && toppings.has('stars')) for(let i=0;i<6;i++) svg+=star(116+i*11,top-12+(i%2)*23);
     if(scoops.length && toppings.has('flowers')) for(let i=0;i<4;i++) {
