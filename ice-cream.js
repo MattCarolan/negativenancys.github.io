@@ -13,7 +13,7 @@
     {name:'Chocolate Acorn', colour:'#b78565'},
     {name:'Lavender Cloud', colour:'#c9afe2'}
   ];
-  const names = ['The Wobbly Flower Tower', 'Nancy\'s Maybe Sundae', 'The Squirrelly Swirl', 'The Meadow Mountain', 'The Giggleberry Surprise', 'The Very Silly Scoop'];
+  const names = ['The Wobbly Blossom', 'Nancy\'s Maybe Sundae', 'The Squirrelly Swirl', 'The Meadow Bloom', 'The Giggleberry Surprise', 'The Very Silly Flower'];
   let scoops = [];
   const toppings = new Set();
   let sillyName = 'My meadow masterpiece';
@@ -24,15 +24,22 @@
     return `<path d="M${x} ${y-6}l2 4 5 1-4 3 1 5-4-2-4 2 1-5-4-3 5-1Z" fill="#77503c"/>`;
   }
   function drawIceCream() {
-    const top = 176 - (scoops.length - 1) * 48;
+    const top = 140;
     let svg = '<svg viewBox="0 0 280 340" role="img" aria-label="Your meadow ice cream"><ellipse cx="140" cy="322" rx="55" ry="7" fill="#284d3918"/><defs><clipPath id="ice-cone-clip"><path d="M100 200H180L141 318Z"/></clipPath></defs><path d="M100 200H180L141 318Z" fill="#dfb16a" stroke="#ae7c44" stroke-width="3" stroke-linejoin="round"/><g clip-path="url(#ice-cone-clip)" stroke="#b27e45" stroke-width="2" opacity=".65">';
     for(let i=0;i<7;i++) svg += `<path d="M75 ${190+i*23}l115 81M204 ${190+i*23}l-115 81"/>`;
     svg += '</g>';
-    if (!scoops.length) svg += '<circle cx="140" cy="164" r="39" fill="none" stroke="#849c83" stroke-width="2" stroke-dasharray="5 7"/><text x="140" y="163" text-anchor="middle" font-size="14" fill="#49664b" font-family="Georgia,serif">Pick a scoop</text><text x="140" y="182" text-anchor="middle" font-size="17" fill="#49664b">✿</text>';
-    scoops.forEach((index, layer) => {
-      const y = 176 - layer*48;
-      svg += `<g><circle cx="140" cy="${y}" r="39" fill="${flavours[index].colour}" stroke="#6a604455" stroke-width="2"/><path d="M108 ${y+20}q7 18 17 4 8 17 18 2 11 14 19-3 10 9 13-4" fill="${flavours[index].colour}" stroke="#6a604433" stroke-width="2"/><ellipse cx="126" cy="${y-17}" rx="12" ry="6" transform="rotate(-25 126 ${y-17})" fill="#ffffff44"/></g>`;
-    });
+    if (!scoops.length) {
+      svg += '<g fill="none" stroke="#849c83" stroke-width="2" stroke-dasharray="4 5">';
+      for (let petal=0; petal<10; petal++) svg += `<path d="M140 140C111 122 114 83 140 73C166 83 169 122 140 140Z" transform="rotate(${petal*36} 140 140)"/>`;
+      svg += '</g><circle cx="140" cy="140" r="25" fill="#eef0e3"/><text x="140" y="136" text-anchor="middle" font-size="13" fill="#49664b" font-family="Georgia,serif">Pick a</text><text x="140" y="152" text-anchor="middle" font-size="13" fill="#49664b" font-family="Georgia,serif">flavour</text>';
+    } else {
+      svg += '<ellipse cx="140" cy="201" rx="40" ry="8" fill="#f5e7bf" stroke="#ae7c4455" stroke-width="2"/><g class="ice-flower">';
+      for (let petal=0; petal<10; petal++) {
+        const colour = flavours[scoops[petal % scoops.length]].colour;
+        svg += `<g transform="rotate(${petal*36} 140 140)"><path class="ice-flower-petal" d="M140 140C111 122 114 83 140 73C166 83 169 122 140 140Z" fill="${colour}" stroke="#6a604455" stroke-width="1.5"/><path d="M136 90Q125 103 132 118" fill="none" stroke="#ffffff55" stroke-width="4" stroke-linecap="round"/></g>`;
+      }
+      svg += '<circle cx="140" cy="140" r="25" fill="#f8d979" stroke="#d2ac5c" stroke-width="2"/><g fill="#fff1b6"><circle cx="130" cy="132" r="3"/><circle cx="143" cy="128" r="2.5"/><circle cx="151" cy="138" r="3"/><circle cx="135" cy="145" r="2.5"/><circle cx="145" cy="151" r="2.5"/></g></g>';
+    }
     if (scoops.length && toppings.has('sprinkles')) {
       const colours=['#ee887b','#f3c94f','#79b1cb','#ad84be','#5eaa7e'];
       for(let i=0;i<17;i++) {const x=113+(i*17%55),y=top-20+(i*13%42);svg+=`<path d="M${x} ${y}l${i%2?4:-4} 5" stroke="${colours[i%5]}" stroke-width="3" stroke-linecap="round"/>`;}
@@ -42,12 +49,12 @@
       const x=119+i*14,y=top-8+(i%2)*20;
       svg+=`<g fill="${i%2?'#ef9eae':'#fff0ba'}"><circle cx="${x-4}" cy="${y}" r="4"/><circle cx="${x+4}" cy="${y}" r="4"/><circle cx="${x}" cy="${y-4}" r="4"/><circle cx="${x}" cy="${y+4}" r="4"/></g><circle cx="${x}" cy="${y}" r="2.5" fill="#f5c84f"/>`;
     }
-    if(scoops.length && toppings.has('cherry')) svg+=`<path d="M142 ${top-43}q-3-21 12-21" fill="none" stroke="#47734a" stroke-width="3"/><circle cx="140" cy="${top-42}" r="10" fill="#cb5558"/><circle cx="137" cy="${top-46}" r="2.5" fill="#ffffff77"/>`;
+    if(scoops.length && toppings.has('cherry')) svg+=`<path d="M142 ${top-87}q-3-21 12-21" fill="none" stroke="#47734a" stroke-width="3"/><circle cx="140" cy="${top-86}" r="10" fill="#cb5558"/><circle cx="137" cy="${top-90}" r="2.5" fill="#ffffff77"/>`;
     svg+='</svg>';
     art.innerHTML=svg;
-    art.querySelector('svg').setAttribute('aria-label', scoops.length ? 'Your ice cream: '+scoops.map(i=>flavours[i].name).join(', ') : 'An empty cone, ready for your first scoop');
+    art.querySelector('svg').setAttribute('aria-label', scoops.length ? 'Your flower-shaped ice cream, with petals made from: '+scoops.map(i=>flavours[i].name).join(', ') : 'An empty cone with a flower outline, ready for your first flavour');
     nameLabel.textContent=sillyName;
-    shop.querySelector('.scoop-count').textContent=`${scoops.length} / 3 scoops`;
+    shop.querySelector('.scoop-count').textContent=`${scoops.length} / 3 flavours`;
     serveButton.disabled=!scoops.length;
     removeButton.disabled=!scoops.length;
     shop.querySelectorAll('[data-ice-flavour]').forEach(button => button.disabled=scoops.length===3);
@@ -62,7 +69,7 @@
     const index=Number(button.dataset.iceFlavour);
     if(scoops.length>=3 || !flavours[index])return;
     clearServed();scoops.push(index);drawIceCream();
-    message.textContent=scoops.length===3?'Three lovely scoops! Add toppings, or remove the top scoop to try another.':flavours[index].name+' added. What else shall we try?';
+    message.textContent=scoops.length===3?'Three flavours in one flower! Add toppings, or remove a flavour to try another.':flavours[index].name+' petals added. What else shall we try?';
   }));
   shop.querySelectorAll('[data-ice-topping]').forEach(button => button.addEventListener('click',()=>{
     clearServed();const topping=button.dataset.iceTopping;
