@@ -33,15 +33,25 @@ const tailButton = document.querySelector('.tail-tickle');
 const cover = document.querySelector('.cover-book');
 const tailSpeech = document.querySelector('.tail-speech');
 let tickles = 0;
+let laughTimer;
+function makeNancyLaugh() {
+  clearTimeout(laughTimer);
+  cover.classList.add('is-laughing');
+  laughTimer = setTimeout(() => cover.classList.remove('is-laughing'), 1800);
+}
 tailButton.addEventListener('click', () => {
-  tickles = Math.min(tickles + 1, 4);
+  tickles++;
+  const intensity = Math.min(tickles, 4);
   const answers = ['Hee! That tickles!', 'Not the tail!', 'Oh! There it goes!', 'My tail has a mind of its own!'];
-  cover.style.setProperty('--tail-speed', `${.7 - tickles * .1}s`);
-  cover.style.setProperty('--tail-angle', `${tickles * .65}deg`);
+  if (tickles % 5 === 0) makeNancyLaugh();
+  cover.style.setProperty('--tail-speed', `${.7 - intensity * .1}s`);
+  cover.style.setProperty('--tail-angle', `${intensity * .65}deg`);
   cover.classList.add('tail-active');
-  tailSpeech.textContent = answers[tickles - 1];
+  tailSpeech.textContent = cover.classList.contains('is-laughing')
+    ? 'Ha ha! That tickles!'
+    : answers[Math.min(tickles - 1, 3)];
   tailSpeech.classList.add('is-visible');
-  document.getElementById('tail-status').textContent = answers[tickles - 1];
+  document.getElementById('tail-status').textContent = tailSpeech.textContent;
   later(cover, () => {
     cover.classList.remove('tail-active');
     tailSpeech.classList.remove('is-visible');
@@ -285,6 +295,7 @@ let lastNancyComment = 0;
 let eyeFrame = 0;
 let latestPointer;
 function nancyObjects() {
+  if (cover.classList.contains('is-laughing')) return;
   const message = nancyComments[nancyComment++ % nancyComments.length];
   cursorSpeech.textContent = message;
   cursorSpeech.classList.add('is-visible');
