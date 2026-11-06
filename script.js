@@ -98,6 +98,7 @@ document.querySelectorAll('.cottage-scene').forEach(cottage => {
       ? ['Psst... is that a curious explorer?', 'Just polishing my mushroom roof!', "It is cosy under this little cap!"]
       : ["Who is rustling in the flowers?", 'Oh! A visitor. Come say hello!', 'Mind the daisies on your way out!'];
   let knocks = 0;
+  let cafeKnocks = 0;
   door.addEventListener('click', () => {
     knocks++;
     cottage.classList.add('cottage-awake');
@@ -106,6 +107,13 @@ document.querySelectorAll('.cottage-scene').forEach(cottage => {
     speech.textContent = message;
     speech.classList.add('is-visible');
     document.getElementById('cottage-status').textContent = message;
+    if (cottage.classList.contains('cafe-cottage')) {
+      cafeKnocks++;
+      if (cafeKnocks === 3) {
+        cafeKnocks = 0;
+        window.openMeadowIceCream();
+      }
+    }
     later(cottage, () => {
       cottage.classList.remove('cottage-awake', 'cottage-knocking');
       speech.classList.remove('is-visible');
