@@ -20,8 +20,18 @@
   let nameIndex = 0;
   let celebrationTimer;
 
-  function star(x,y) {
-    return `<path d="M${x} ${y-6}l2 4 5 1-4 3 1 5-4-2-4 2 1-5-4-3 5-1Z" fill="#77503c"/>`;
+  function star(x, y, angle = 0) {
+    const points = Array.from({length:10},(_,i) => {
+      const radius = i % 2 ? 1.9 : 4.3;
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      return (Math.cos(a)*radius).toFixed(2)+','+(Math.sin(a)*radius).toFixed(2);
+    }).join(' ');
+    return `<g class="ice-chocolate-star" transform="translate(${x} ${y}) rotate(${angle})"><polygon points="${points}" transform="translate(.45 .7)" fill="#513124" opacity=".24"/><polygon points="${points}" fill="#80513b" stroke="#593525" stroke-width=".55" stroke-linejoin="round"/><path d="M-2.5 -1.1 -1.1 -1.5 0 -3.1 .7 -1.6" fill="none" stroke="#b98664" stroke-opacity=".8" stroke-width=".65" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  }
+  function iceSugarFlower(x, y, angle, colour) {
+    let flower = `<g class="ice-sugar-flower" transform="translate(${x} ${y}) rotate(${angle})"><ellipse cx=".4" cy="1.2" rx="4.2" ry="3.3" fill="#634331" opacity=".18"/>`;
+    for (let petal=0;petal<5;petal++) flower += `<ellipse cx="0" cy="-2.1" rx="1.65" ry="2.4" transform="rotate(${petal*72})" fill="${colour}" stroke="#b7847844" stroke-width=".45"/>`;
+    return flower + '<circle cx="0" cy="0" r="1.45" fill="#ecc265"/><path d="M-1.3 -3.2 -.9 -2.5" stroke="#fffaf0" stroke-opacity=".8" stroke-width=".8" stroke-linecap="round"/></g>';
   }
   function iceSprinkle(x, y, angle, colour, length = 4.6) {
     const half = length / 2;
@@ -51,7 +61,14 @@
           });
           petalSprinkles += '</g>';
         }
-        svg += `<g transform="rotate(${petal*36} 140 140)"><path class="ice-flower-petal" d="M140 140C111 122 114 83 140 73C166 83 169 122 140 140Z" fill="${colour}" stroke="#6a604455" stroke-width="1.5"/><path d="M136 90Q125 103 132 118" fill="none" stroke="#ffffff55" stroke-width="4" stroke-linecap="round"/>${petalSprinkles}</g>`;
+        let petalCandy = '';
+        if (toppings.has('stars') || toppings.has('flowers')) {
+          petalCandy = '<g clip-path="url(#ice-petal-surface)">';
+          if (toppings.has('stars') && petal % 2 === 0) petalCandy += star(143, 96 + petal % 3 * 7, 17 + petal * 19);
+          if (toppings.has('flowers') && petal % 2 === 1) petalCandy += iceSugarFlower(137, 101 + petal % 3 * 6, petal * 27, petal % 3 ? '#f5d3db' : '#fff1d5');
+          petalCandy += '</g>';
+        }
+        svg += `<g transform="rotate(${petal*36} 140 140)"><path class="ice-flower-petal" d="M140 140C111 122 114 83 140 73C166 83 169 122 140 140Z" fill="${colour}" stroke="#6a604455" stroke-width="1.5"/><path d="M136 90Q125 103 132 118" fill="none" stroke="#ffffff55" stroke-width="4" stroke-linecap="round"/>${petalSprinkles}${petalCandy}</g>`;
       }
       svg += '<circle cx="140" cy="140" r="25" fill="#f8d979" stroke="#d2ac5c" stroke-width="2"/><g fill="#fff1b6"><circle cx="130" cy="132" r="3"/><circle cx="143" cy="128" r="2.5"/><circle cx="151" cy="138" r="3"/><circle cx="135" cy="145" r="2.5"/><circle cx="145" cy="151" r="2.5"/></g></g>';
     }
@@ -62,12 +79,15 @@
       positions.forEach(([x,y,angle],i) => { svg += iceSprinkle(x,y,angle,colours[i % colours.length],4.2); });
       svg += '</g>';
     }
-    if(scoops.length && toppings.has('stars')) for(let i=0;i<6;i++) svg+=star(116+i*11,top-12+(i%2)*23);
-    if(scoops.length && toppings.has('flowers')) for(let i=0;i<4;i++) {
-      const x=119+i*14,y=top-8+(i%2)*20;
-      svg+=`<g fill="${i%2?'#ef9eae':'#fff0ba'}"><circle cx="${x-4}" cy="${y}" r="4"/><circle cx="${x+4}" cy="${y}" r="4"/><circle cx="${x}" cy="${y-4}" r="4"/><circle cx="${x}" cy="${y+4}" r="4"/></g><circle cx="${x}" cy="${y}" r="2.5" fill="#f5c84f"/>`;
+    if (scoops.length && (toppings.has('stars') || toppings.has('flowers'))) {
+      svg += '<g clip-path="url(#ice-flower-centre)">';
+      if (toppings.has('stars')) svg += star(130,132,-18) + star(150,144,28);
+      if (toppings.has('flowers')) svg += iceSugarFlower(147,130,12,'#f5d3db') + iceSugarFlower(130,148,-24,'#fff1d5') + iceSugarFlower(143,151,35,'#f5d3db');
+      svg += '</g>';
     }
-    if(scoops.length && toppings.has('cherry')) svg+=`<path d="M142 ${top-87}q-3-21 12-21" fill="none" stroke="#47734a" stroke-width="3"/><circle cx="140" cy="${top-86}" r="10" fill="#cb5558"/><circle cx="137" cy="${top-90}" r="2.5" fill="#ffffff77"/>`;
+    if (scoops.length && toppings.has('cherry')) {
+      svg += '<defs><linearGradient id="ice-cherry-glaze" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e16c72"/><stop offset=".55" stop-color="#c64853"/><stop offset="1" stop-color="#93323f"/></linearGradient></defs><g class="ice-cherry"><g clip-path="url(#ice-petal-surface)"><ellipse cx="140" cy="78.5" rx="7" ry="2.1" fill="#764737" opacity=".27"/></g><path d="M140 62Q137 45 152 42" fill="none" stroke="#496644" stroke-width="2.1" stroke-linecap="round"/><path class="ice-cherry-fruit" d="M140 61C132 56 127 63 129 71C130 78 136 81 140 79C144 81 151 77 152 70C154 62 147 57 140 61Z" fill="url(#ice-cherry-glaze)" stroke="#9f3a43" stroke-width=".6"/><path d="M132.5 64Q131 67 133 69" fill="none" stroke="#ffe3d6" stroke-opacity=".75" stroke-width="1.6" stroke-linecap="round"/></g>';
+    }
     svg+='</svg>';
     art.innerHTML=svg;
     art.querySelector('svg').setAttribute('aria-label', scoops.length ? 'Your flower-shaped ice cream, with petals made from: '+scoops.map(i=>flavours[i].name).join(', ') : 'An empty cone with a flower outline, ready for your first flavour');
