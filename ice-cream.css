@@ -2,16 +2,16 @@
 
 .ice-cream-intro{padding:14px 25px;margin:0;font-size:12px;line-height:1.6;color:#536449;border-bottom:1px solid #284d391a}
 
-/* Nancy visits the café for a little taste of the child's creation. */
-.nancy-eater{position:absolute;right:-14px;top:35px;width:145px;aspect-ratio:650/1126;z-index:2;opacity:0;transform:translateX(45px);transition:opacity .45s,transform .55s;pointer-events:none;filter:drop-shadow(1px 4px 3px #284d3926)}
-.nancy-eater-art{display:block;width:100%;height:100%;overflow:visible}
-.nancy-eater-expression{opacity:0;transition:opacity .2s}
+/* Freshly illustrated Nancy, based on the selected seated concept. */
+.nancy-eater{position:absolute;right:3px;top:var(--nancy-top,35px);width:225px;aspect-ratio:1185/1327;z-index:2;opacity:0;transform:translateX(35px);transition:opacity .45s,transform .55s;pointer-events:none;filter:drop-shadow(1px 4px 3px #284d3926)}
+.nancy-eater-art{display:block;width:100%;height:100%;object-fit:contain;transform-origin:26.4% 42%}
+.nancy-mouth-target{position:absolute;left:26.4%;top:42%;width:1px;height:1px;pointer-events:none}
 .is-eating .nancy-eater,.has-tasted .nancy-eater{opacity:1;transform:translateX(0)}
-.is-eating .nancy-eater-expression,.has-tasted .nancy-eater-expression{opacity:1}
-.is-eating .nancy-chewing-mouth{transform-box:view-box;transform-origin:735px 1130px;animation:nancy-chew .4s ease-in-out infinite alternate}
+.is-eating .nancy-eater-art{animation:nancy-nibble .45s ease-in-out infinite alternate}
 .ice-cream-art{position:relative;z-index:1;transition:transform .55s ease-in-out;transform-origin:50% 70%}
-.food-to-nancy .ice-cream-art{transform:translate(var(--eat-shift-x,35px),var(--eat-shift-y,0px)) rotate(8deg)}
+.food-to-nancy .ice-cream-art{transform:translate(var(--eat-shift-x,-35px),var(--eat-shift-y,0px)) rotate(8deg)}
+.ice-cream-preview{min-height:380px}
 .ice-cream-controls[inert]{opacity:.75}
-@keyframes nancy-chew{to{transform:scaleY(.72)}}
-@media(max-width:600px){.nancy-eater{top:15px;right:17px;width:110px}.ice-cream-preview{min-height:250px}.food-to-nancy .ice-cream-art{transform:translate(var(--eat-shift-x,35px),var(--eat-shift-y,0px)) rotate(8deg)}}
-@media(prefers-reduced-motion:reduce){.nancy-eater,.nancy-eater-expression,.ice-cream-art{transition:none}.is-eating .nancy-chewing-mouth{animation:none}.food-to-nancy .ice-cream-art{transform:none}}
+@keyframes nancy-nibble{to{transform:translateY(1.1px) rotate(.4deg)}}
+@media(max-width:600px){.nancy-eater{right:3px;width:190px}.ice-cream-preview{min-height:300px}}
+@media(prefers-reduced-motion:reduce){.nancy-eater,.ice-cream-art{transition:none}.is-eating .nancy-eater-art{animation:none}.food-to-nancy .ice-cream-art{transform:none}}

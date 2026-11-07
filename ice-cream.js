@@ -200,11 +200,17 @@
     isEating = true;
     setEatingBusy(true);
     shop.classList.add('is-eating');
+    const eater = shop.querySelector('.nancy-eater');
+    const previewBounds = shop.querySelector('.ice-cream-preview').getBoundingClientRect();
+    const flowerBounds = art.querySelector('.ice-flower').getBoundingClientRect();
+    const eaterHeight = eater.getBoundingClientRect().height;
+    const eaterTop = Math.max(4,flowerBounds.top + flowerBounds.height / 2 - previewBounds.top - eaterHeight * .42);
+    eater.style.setProperty('--nancy-top', eaterTop+'px');
     message.textContent = 'Nancy says: “I suppose I could try one little taste...”';
     scheduleBite(()=>{
       const mouth = shop.querySelector('.nancy-mouth-target').getBoundingClientRect();
       const flower = art.querySelector('.ice-flower').getBoundingClientRect();
-      const x = mouth.left - (flower.left + flower.width / 2) - 12;
+      const x = mouth.left - (flower.left + flower.width / 2) - flower.width * .4;
       const y = mouth.top - (flower.top + flower.height / 2);
       art.style.setProperty('--eat-shift-x', Math.max(-65,Math.min(90,x))+'px');
       art.style.setProperty('--eat-shift-y', Math.max(-40,Math.min(60,y))+'px');
