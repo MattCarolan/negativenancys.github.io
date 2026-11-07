@@ -19,6 +19,12 @@
   let sillyName = 'My meadow masterpiece';
   let nameIndex = 0;
   let celebrationTimer;
+  let isEating = false;
+  let eatingBites = 0;
+  let ateCone = false;
+  const eatingTimers = [];
+  const controls = shop.querySelector('.ice-cream-controls');
+  const nameButton = shop.querySelector('[data-ice-action="name"]');
 
   function star(x, y, angle = 0) {
     const points = Array.from({length:10},(_,i) => {
@@ -123,6 +129,16 @@
     if (scoops.length && toppings.has('cherry')) {
       svg += '<defs><linearGradient id="ice-cherry-glaze" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e16c72"/><stop offset=".55" stop-color="#c64853"/><stop offset="1" stop-color="#93323f"/></linearGradient></defs><g class="ice-cherry"><g clip-path="url(#ice-petal-surface)"><ellipse cx="140" cy="78.5" rx="7" ry="2.1" fill="#764737" opacity=".27"/></g><path d="M140 62Q137 45 152 42" fill="none" stroke="#496644" stroke-width="2.1" stroke-linecap="round"/><path class="ice-cherry-fruit" d="M140 61C132 56 127 63 129 71C130 78 136 81 140 79C144 81 151 77 152 70C154 62 147 57 140 61Z" fill="url(#ice-cherry-glaze)" stroke="#9f3a43" stroke-width=".6"/><path d="M132.5 64Q131 67 133 69" fill="none" stroke="#ffe3d6" stroke-opacity=".75" stroke-width="1.6" stroke-linecap="round"/></g>';
     }
+    const foodStart = svg.indexOf('<path d="M100 200H180L141 318Z" fill=');
+    if (foodStart >= 0) {
+      let mask = '<defs><mask id="nancy-ice-bites" maskUnits="userSpaceOnUse" x="0" y="0" width="280" height="340"><rect width="280" height="340" fill="white"/>';
+      if (eatingBites >= 1) mask += '<circle cx="183" cy="121" r="36" fill="black"/>';
+      if (eatingBites >= 2) mask += '<circle cx="131" cy="101" r="48" fill="black"/>';
+      if (eatingBites >= 3) mask += '<rect x="65" y="65" width="150" height="151" fill="black"/>';
+      if (ateCone) mask += '<rect width="280" height="340" fill="black"/>';
+      mask += '</mask></defs>';
+      svg = svg.slice(0,foodStart) + mask + '<g mask="url(#nancy-ice-bites)">' + svg.slice(foodStart) + '</g>';
+    }
     svg+='</svg>';
     art.innerHTML=svg;
     art.querySelector('svg').setAttribute('aria-label', scoops.length ? 'Your flower-shaped ice cream, with petals made from: '+scoops.map(i=>flavours[i].name).join(', ') : 'An empty cone with a flower outline, ready for your first flavour');
@@ -137,7 +153,7 @@
       button.classList.toggle('is-selected',selected);
     });
   }
-  function clearServed() {shop.classList.remove('is-served');clearTimeout(celebrationTimer);}
+  function clearServed() {shop.classList.remove('is-served','has-tasted');clearTimeout(celebrationTimer);}
   shop.querySelectorAll('[data-ice-flavour]').forEach(button => button.addEventListener('click',()=>{
     const index=Number(button.dataset.iceFlavour);
     if(scoops.length>=3 || !flavours[index])return;
@@ -156,11 +172,66 @@
   shop.querySelector('[data-ice-action="reset"]').addEventListener('click',()=>{
     clearServed();scoops=[];toppings.clear();sillyName='My meadow masterpiece';drawIceCream();message.textContent='A fresh cone. What will you make this time?';
   });
+  function setEatingBusy(busy) {
+    controls.inert = busy;
+    controls.setAttribute('aria-busy', String(busy));
+    nameButton.disabled = busy;
+    serveButton.disabled = busy || !scoops.length;
+  }
+  function stopEating() {
+    eatingTimers.forEach(clearTimeout);
+    eatingTimers.length = 0;
+    isEating = false;
+    eatingBites = 0;
+    ateCone = false;
+    shop.classList.remove('is-eating','food-to-nancy','has-tasted');
+    art.style.removeProperty('--eat-shift-x');
+    art.style.removeProperty('--eat-shift-y');
+    setEatingBusy(false);
+    drawIceCream();
+  }
+  function scheduleBite(callback, delay) {
+    eatingTimers.push(setTimeout(callback,delay));
+  }
   serveButton.addEventListener('click',()=>{
-    if(!scoops.length)return;
-    clearServed();void shop.offsetWidth;shop.classList.add('is-served');
-    message.textContent='Nancy says: “I said no... but maybe one little taste of '+sillyName+'!”';
-    celebrationTimer=setTimeout(()=>shop.classList.remove('is-served'),1600);
+    if (!scoops.length || isEating) return;
+    stopEating();
+    clearServed();
+    isEating = true;
+    setEatingBusy(true);
+    shop.classList.add('is-eating');
+    message.textContent = 'Nancy says: “I suppose I could try one little taste...”';
+    scheduleBite(()=>{
+      const mouth = shop.querySelector('.nancy-mouth-target').getBoundingClientRect();
+      const flower = art.querySelector('.ice-flower').getBoundingClientRect();
+      const x = mouth.left - (flower.left + flower.width / 2) - 12;
+      const y = mouth.top - (flower.top + flower.height / 2);
+      art.style.setProperty('--eat-shift-x', Math.max(-65,Math.min(90,x))+'px');
+      art.style.setProperty('--eat-shift-y', Math.max(-40,Math.min(60,y))+'px');
+      shop.classList.add('food-to-nancy');
+    },600);
+    [1200,1900,2600].forEach((delay,index)=>scheduleBite(()=>{
+      eatingBites=index+1;
+      drawIceCream();
+      serveButton.disabled=true;
+      message.textContent=['A little nibble...','Oh! Another little bite!','Nancy says: “Mmm! Flower ice cream!”'][index];
+    },delay));
+    scheduleBite(()=>{
+      ateCone=true;
+      drawIceCream();
+      serveButton.disabled=true;
+      message.textContent='Crunch! Even the cone was delicious.';
+    },3200);
+    scheduleBite(()=>{
+      const enjoyedName=sillyName;
+      scoops=[];
+      toppings.clear();
+      stopEating();
+      shop.classList.add('has-tasted');
+      message.textContent='Nancy ate '+enjoyedName+'! “Mmm... I am glad I tried that!” Make her another?';
+      nameLabel.textContent='Another flower ice cream?';
+      celebrationTimer=setTimeout(()=>shop.classList.remove('has-tasted'),3000);
+    },3900);
   });
   shop.querySelector('[data-ice-action="close"]').addEventListener('click',()=>shop.close());
   shop.addEventListener('click',event=>{
@@ -168,7 +239,7 @@
     const rect=shop.getBoundingClientRect();
     if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)shop.close();
   });
-  shop.addEventListener('close',()=>{document.body.classList.remove('ice-shop-open');clearServed();});
+  shop.addEventListener('close',()=>{document.body.classList.remove('ice-shop-open');clearServed();stopEating();});
   window.openMeadowIceCream=()=>{
     if(shop.open)return;
     drawIceCream();shop.showModal();shop.scrollTop=0;document.body.classList.add('ice-shop-open');
